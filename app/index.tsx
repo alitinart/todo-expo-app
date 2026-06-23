@@ -1,6 +1,7 @@
 import AddTaskButton from "@/components/AddTaskButton";
 import AppInput from "@/components/AppInput";
 import AppText from "@/components/AppText";
+import KeyboardDismissView from "@/components/KeyboardDismissView";
 import TaskCard from "@/components/TaskCard";
 import TaskDetailModal from "@/components/TaskDetailModal";
 import { Task } from "@/models/task.model";
@@ -18,8 +19,7 @@ const INITIAL_TASKS: Task[] = [
     icon: "ChefHat",
     title: "Finish Dishes",
     color: "primary",
-    description:
-      "Finish the dishes before the meal is served.Finish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is served.Finish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is served.Finish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is served.Finish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is served.Finish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is served.Finish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is served.Finish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is served",
+    description: "Finish the dishes before the meal is served.",
     status: "TODO",
     createdAt: new Date(),
   },
@@ -50,7 +50,7 @@ export default function Index() {
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
   const [filter, setFilter] = useState<Filter>("ALL");
-  const [query, setQuery] = useState(""); // ADD: search state
+  const [query, setQuery] = useState("");
   const progressAnim = useRef(new Animated.Value(0)).current;
   const completed = tasks.filter((t) => t.status === "COMPLETED").length;
   const total = tasks.length;
@@ -77,10 +77,8 @@ export default function Index() {
     );
     if (selectedTaskId === id) handleCloseModal();
   };
-  // First apply status filter
   const statusFiltered =
     filter === "ALL" ? tasks : tasks.filter((t) => t.status === filter);
-  // Then apply text search — matches title or description (case-insensitive)
   const filteredTasks = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return statusFiltered;
@@ -101,94 +99,98 @@ export default function Index() {
   return (
     <>
       <StatusBar barStyle="dark-content" />
-      <SafeAreaView style={styles.wrapper}>
-        <AppText color={colors.primary} variant="title" weight="bold">
-          Welcome back!
-        </AppText>
-        <View style={styles.focusCard}>
-          <View style={styles.decorativeCircle} />
-          <AppText weight="medium" color={colors.primary}>
-            Today&apos;s Focus
+      <KeyboardDismissView>
+        <SafeAreaView style={styles.wrapper}>
+          <AppText color={colors.primary} variant="title" weight="bold">
+            Welcome back!
           </AppText>
-          <AppText weight="bold" variant="h2">
-            {tasksToComplete.length > 0
-              ? `You've got ${tasksToComplete.length} tasks to complete today.`
-              : `You have no tasks to complete today.`}
-          </AppText>
-          <View style={styles.progressMeta}>
-            <AppText variant="caption" color={colors.gray}>
-              {completed} of {total} completed
+          <View style={styles.focusCard}>
+            <View style={styles.decorativeCircle} />
+            <AppText weight="medium" color={colors.primary}>
+              Today&apos;s Focus
             </AppText>
-            <AppText variant="caption" color={colors.gray} weight="medium">
-              {Math.round(progress * 100)}%
+            <AppText weight="bold" variant="h2">
+              {tasksToComplete.length > 0
+                ? `You've got ${tasksToComplete.length} tasks to complete today.`
+                : `You have no tasks to complete today.`}
             </AppText>
-          </View>
-          <View style={styles.progressTrack}>
-            <Animated.View
-              style={[
-                styles.progressFill,
-                {
-                  width: progressAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["0%", "100%"],
-                  }),
-                  backgroundColor:
-                    progress === 1 ? colors.green : colors.primary,
-                },
-              ]}
-            />
-          </View>
-        </View>
-        <View style={styles.taskWrapper}>
-          <View style={styles.taskHeader}>
-            <AppText variant="title" weight="bold">
-              Tasks
-            </AppText>
-            <View style={styles.filterRow}>
-              {FILTERS.map(({ label, value }) => (
-                <Pressable
-                  key={value}
-                  onPress={() => setFilter(value)}
-                  style={[
-                    styles.filterPill,
-                    filter === value && styles.filterPillActive,
-                  ]}
-                >
-                  <AppText
-                    variant="caption"
-                    color={filter === value ? colors.primary : colors.gray}
-                    weight={filter === value ? "medium" : "regular"}
-                  >
-                    {label}
-                  </AppText>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-          <AppInput
-            placeholder="Search tasks..."
-            value={query}
-            onChangeText={setQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-            style={styles.searchInput}
-          />
-          {filteredTasks.length === 0 ? (
-            <View style={styles.emptyState}>
-              <AppText variant="body" weight="bold" color={colors.muted}>
-                {query ? "No tasks match your search." : EMPTY_MESSAGES[filter]}
+            <View style={styles.progressMeta}>
+              <AppText variant="caption" color={colors.gray}>
+                {completed} of {total} completed
+              </AppText>
+              <AppText variant="caption" color={colors.gray} weight="medium">
+                {Math.round(progress * 100)}%
               </AppText>
             </View>
-          ) : (
-            filteredTasks.map((task) => (
-              <Pressable key={task.id} onPress={() => handleOpenModal(task)}>
-                <TaskCard {...task} onToggleComplete={handleToggleComplete} />
-              </Pressable>
-            ))
-          )}
-        </View>
-        <AddTaskButton onPress={() => router.push("/add-task")} />
-      </SafeAreaView>
+            <View style={styles.progressTrack}>
+              <Animated.View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: progressAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["0%", "100%"],
+                    }),
+                    backgroundColor:
+                      progress === 1 ? colors.green : colors.primary,
+                  },
+                ]}
+              />
+            </View>
+          </View>
+          <View style={styles.taskWrapper}>
+            <View style={styles.taskHeader}>
+              <AppText variant="title" weight="bold">
+                Tasks
+              </AppText>
+              <View style={styles.filterRow}>
+                {FILTERS.map(({ label, value }) => (
+                  <Pressable
+                    key={value}
+                    onPress={() => setFilter(value)}
+                    style={[
+                      styles.filterPill,
+                      filter === value && styles.filterPillActive,
+                    ]}
+                  >
+                    <AppText
+                      variant="caption"
+                      color={filter === value ? colors.primary : colors.gray}
+                      weight={filter === value ? "medium" : "regular"}
+                    >
+                      {label}
+                    </AppText>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+            <AppInput
+              placeholder="Search tasks..."
+              value={query}
+              onChangeText={setQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+              style={styles.searchInput}
+            />
+            {filteredTasks.length === 0 ? (
+              <View style={styles.emptyState}>
+                <AppText variant="body" weight="bold" color={colors.muted}>
+                  {query
+                    ? "No tasks match your search."
+                    : EMPTY_MESSAGES[filter]}
+                </AppText>
+              </View>
+            ) : (
+              filteredTasks.map((task) => (
+                <Pressable key={task.id} onPress={() => handleOpenModal(task)}>
+                  <TaskCard {...task} onToggleComplete={handleToggleComplete} />
+                </Pressable>
+              ))
+            )}
+          </View>
+          <AddTaskButton onPress={() => router.push("/add-task")} />
+        </SafeAreaView>
+      </KeyboardDismissView>
       <TaskDetailModal
         visible={!!selectedTask}
         onClose={handleCloseModal}
@@ -217,7 +219,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  // keep existing styles...
   focusCard: {
     padding: 16,
     backgroundColor: colors.white,
@@ -270,7 +271,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.muted,
     marginBottom: 10,
-    // Optional: make it visually consistent with your AppInput default
-    // Extra spacing if needed
   },
 });

@@ -2,6 +2,7 @@ import AppButton from "@/components/AppButton";
 import AppInput from "@/components/AppInput";
 import AppText from "@/components/AppText";
 import IconPickerModal, { LucideIconName } from "@/components/IconPickerModal";
+import KeyboardDismissView from "@/components/KeyboardDismissView";
 import { colors, taskColors } from "@/utils/theme";
 import { useRouter } from "expo-router";
 import { ArrowLeft, PlusCircle } from "lucide-react-native";
@@ -27,87 +28,93 @@ export default function AddTaskScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.wrapper}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()}>
-          <ArrowLeft color={colors.primary} size={24} />
-        </Pressable>
-        <AppText color={colors.primary} variant="title" weight="medium">
-          New Task
-        </AppText>
-      </View>
-      <View style={styles.form}>
-        <View style={{ gap: 16 }}>
-          <AppText center variant="h1" color={colors.primary} weight="bold">
-            What&apos;s on your mind?
-          </AppText>
-          <AppText center variant="body" color={colors.gray}>
-            Capture your thoughts and to-dos here.
+    <KeyboardDismissView>
+      <SafeAreaView style={styles.wrapper}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()}>
+            <ArrowLeft color={colors.primary} size={24} />
+          </Pressable>
+          <AppText color={colors.primary} variant="title" weight="medium">
+            New Task
           </AppText>
         </View>
-        <AppInput
-          label="Task Title"
-          placeholder="e.g., Design Weekly Sync"
-          value={title}
-          onChangeText={setTitle}
-        />
-        <AppInput
-          label="Description"
-          placeholder="Add a some details about this task..."
-          textarea
-          value={description}
-          onChangeText={setDescription}
-        />
+        <View style={styles.form}>
+          <View style={{ gap: 16 }}>
+            <AppText center variant="h1" color={colors.primary} weight="bold">
+              What&apos;s on your mind?
+            </AppText>
+            <AppText center variant="body" color={colors.gray}>
+              Capture your thoughts and to-dos here.
+            </AppText>
+          </View>
+          <AppInput
+            label="Task Title"
+            placeholder="e.g., Design Weekly Sync"
+            value={title}
+            onChangeText={setTitle}
+          />
+          <AppInput
+            label="Description"
+            placeholder="Add a some details about this task..."
+            textarea
+            value={description}
+            onChangeText={setDescription}
+          />
 
-        <View style={styles.customizeWrapper}>
-          <AppText weight="medium" style={{ fontSize: 14 }} color={colors.gray}>
-            Customize
-          </AppText>
-          <View style={styles.row}>
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() => setPickerVisible(true)}
-              style={[styles.iconPicker, { backgroundColor: activeColor }]}
+          <View style={styles.customizeWrapper}>
+            <AppText
+              weight="medium"
+              style={{ fontSize: 14 }}
+              color={colors.gray}
             >
-              <View style={styles.iconBox}>
-                <SelectedIcon color={colors.white} size={22} />
-              </View>
-            </TouchableOpacity>
+              Customize
+            </AppText>
+            <View style={styles.row}>
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => setPickerVisible(true)}
+                style={[styles.iconPicker, { backgroundColor: activeColor }]}
+              >
+                <View style={styles.iconBox}>
+                  <SelectedIcon color={colors.white} size={22} />
+                </View>
+              </TouchableOpacity>
 
-            <View style={styles.colorsWrapper}>
-              {taskColors.map((color) => (
-                <Pressable
-                  onPress={() => {
-                    setActiveColor(color);
-                  }}
-                  key={color}
-                  style={[
-                    styles.colorItem,
-                    color === activeColor ? styles.activeColor : null,
-                    { backgroundColor: color },
-                  ]}
-                ></Pressable>
-              ))}
+              <View style={styles.colorsWrapper}>
+                {taskColors.map((color) => (
+                  <Pressable
+                    onPress={() => {
+                      setActiveColor(color);
+                    }}
+                    key={color}
+                    style={[
+                      styles.colorItem,
+                      color === activeColor ? styles.activeColor : null,
+                      { backgroundColor: color },
+                    ]}
+                  ></Pressable>
+                ))}
+              </View>
             </View>
           </View>
+
+          <AppButton
+            title="Add Task"
+            leftIcon={<PlusCircle color={colors.white} size={18} />}
+            onPress={handleSave}
+          />
         </View>
 
-        <AppButton
-          title="Add Task"
-          leftIcon={<PlusCircle color={colors.white} size={18} />}
-          onPress={handleSave}
+        <IconPickerModal
+          visible={pickerVisible}
+          onClose={() => setPickerVisible(false)}
+          onSelect={(name) => {
+            setIconName(name);
+            setPickerVisible(false);
+          }}
         />
-      </View>
-
-      <IconPickerModal
-        visible={pickerVisible}
-        onClose={() => setPickerVisible(false)}
-        onSelect={(name) => {
-          setIconName(name);
-          setPickerVisible(false);
-        }}
-      />
-    </SafeAreaView>
+      </SafeAreaView>
+    </KeyboardDismissView>
   );
 }
 
