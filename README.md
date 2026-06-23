@@ -11,6 +11,23 @@ A simple and modern Todo application built with **React Native (Expo)**. This ap
 - Persistent local storage
 - Clean and responsive UI
 - Works on Android, iOS, and Web (via Expo)
+
+---
+
+## 📸 Preview
+
+### Home Screen
+![Home Screen](./assets/readme/home.png)
+
+### Task Details
+![Task Details](./assets/readme/task-details.png)
+
+### Add Task
+![Add Task](./assets/readme/add-task.png)
+
+### App Demo
+![App Demo](./assets/readme/app.gif)
+
 ---
 
 ## 📦 Tech Stack
@@ -34,11 +51,10 @@ cd todo-expo-app
 
 ```bash
 npm install
-or
+# or
 yarn install
-or
+# or
 pnpm install
-...
 ```
 
 ### 3. Start the development server
