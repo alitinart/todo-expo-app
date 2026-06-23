@@ -9,8 +9,9 @@ import {
 
 import AppText from "./AppText";
 import { colors } from "@/utils/theme";
+import { Background } from "@react-navigation/elements";
 
-type Variant = "primary" | "secondary" | "inverted" | "outlined";
+type Variant = "primary" | "secondary" | "inverted" | "outlined" | "success";
 
 type Props = {
   title: string;
@@ -63,6 +64,12 @@ export default function AppButton({
       backgroundColor: "transparent",
       borderColor: "#A7B0B7",
       textColor: colors.neutral,
+    },
+
+    success: {
+      backgroundColor: colors.green,
+      borderColor: colors.green,
+      textColor: "#FFFFFF",
     },
   };
 

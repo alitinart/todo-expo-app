@@ -1,10 +1,12 @@
 import AddTaskButton from "@/components/AddTaskButton";
+import AppInput from "@/components/AppInput";
 import AppText from "@/components/AppText";
 import TaskCard from "@/components/TaskCard";
+import TaskDetailModal from "@/components/TaskDetailModal";
 import { Task } from "@/models/task.model";
 import { colors } from "@/utils/theme";
 import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -16,7 +18,8 @@ const INITIAL_TASKS: Task[] = [
     icon: "ChefHat",
     title: "Finish Dishes",
     color: "primary",
-    description: "Finish the dishes before the meal is served.",
+    description:
+      "Finish the dishes before the meal is served.Finish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is served.Finish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is served.Finish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is served.Finish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is served.Finish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is served.Finish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is served.Finish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is servedFinish the dishes before the meal is served",
     status: "TODO",
     createdAt: new Date(),
   },
@@ -47,25 +50,20 @@ export default function Index() {
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
   const [filter, setFilter] = useState<Filter>("ALL");
+  const [query, setQuery] = useState(""); // ADD: search state
   const progressAnim = useRef(new Animated.Value(0)).current;
-
   const completed = tasks.filter((t) => t.status === "COMPLETED").length;
   const total = tasks.length;
   const progress = total === 0 ? 0 : completed / total;
   const tasksToComplete = tasks.filter((t) => t.status === "TODO");
-
-  const filteredTasks =
-    filter === "ALL" ? tasks : tasks.filter((t) => t.status === filter);
-
-  useEffect(() => {
-    Animated.spring(progressAnim, {
-      toValue: progress,
-      useNativeDriver: false,
-      bounciness: 6,
-      speed: 12,
-    }).start();
-  }, [progress, progressAnim]);
-
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const selectedTask = tasks.find((t) => t.id === selectedTaskId) ?? null;
+  const handleOpenModal = (task: Task) => setSelectedTaskId(task.id);
+  const handleCloseModal = () => setSelectedTaskId(null);
+  const handleOnDelete = (id: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+    handleCloseModal();
+  };
   const handleToggleComplete = (id: string) => {
     setTasks((prev) =>
       prev.map((task) =>
@@ -77,8 +75,29 @@ export default function Index() {
           : task,
       ),
     );
+    if (selectedTaskId === id) handleCloseModal();
   };
-
+  // First apply status filter
+  const statusFiltered =
+    filter === "ALL" ? tasks : tasks.filter((t) => t.status === filter);
+  // Then apply text search — matches title or description (case-insensitive)
+  const filteredTasks = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return statusFiltered;
+    return statusFiltered.filter((t) => {
+      const title = t.title?.toLowerCase() || "";
+      const desc = t.description?.toLowerCase() || "";
+      return title.includes(q) || desc.includes(q);
+    });
+  }, [statusFiltered, query]);
+  useEffect(() => {
+    Animated.spring(progressAnim, {
+      toValue: progress,
+      useNativeDriver: false,
+      bounciness: 6,
+      speed: 12,
+    }).start();
+  }, [progress, progressAnim]);
   return (
     <>
       <StatusBar barStyle="dark-content" />
@@ -86,7 +105,6 @@ export default function Index() {
         <AppText color={colors.primary} variant="title" weight="bold">
           Welcome back!
         </AppText>
-
         <View style={styles.focusCard}>
           <View style={styles.decorativeCircle} />
           <AppText weight="medium" color={colors.primary}>
@@ -97,7 +115,6 @@ export default function Index() {
               ? `You've got ${tasksToComplete.length} tasks to complete today.`
               : `You have no tasks to complete today.`}
           </AppText>
-
           <View style={styles.progressMeta}>
             <AppText variant="caption" color={colors.gray}>
               {completed} of {total} completed
@@ -122,7 +139,6 @@ export default function Index() {
             />
           </View>
         </View>
-
         <View style={styles.taskWrapper}>
           <View style={styles.taskHeader}>
             <AppText variant="title" weight="bold">
@@ -149,30 +165,40 @@ export default function Index() {
               ))}
             </View>
           </View>
-
+          <AppInput
+            placeholder="Search tasks..."
+            value={query}
+            onChangeText={setQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+            style={styles.searchInput}
+          />
           {filteredTasks.length === 0 ? (
             <View style={styles.emptyState}>
               <AppText variant="body" weight="bold" color={colors.muted}>
-                {EMPTY_MESSAGES[filter]}
+                {query ? "No tasks match your search." : EMPTY_MESSAGES[filter]}
               </AppText>
             </View>
           ) : (
             filteredTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                {...task}
-                onToggleComplete={handleToggleComplete}
-              />
+              <Pressable key={task.id} onPress={() => handleOpenModal(task)}>
+                <TaskCard {...task} onToggleComplete={handleToggleComplete} />
+              </Pressable>
             ))
           )}
         </View>
-
         <AddTaskButton onPress={() => router.push("/add-task")} />
       </SafeAreaView>
+      <TaskDetailModal
+        visible={!!selectedTask}
+        onClose={handleCloseModal}
+        onDelete={handleOnDelete}
+        onMarkDone={handleToggleComplete}
+        task={selectedTask}
+      />
     </>
   );
 }
-
 const styles = StyleSheet.create({
   wrapper: {
     padding: 16,
@@ -191,6 +217,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
+  // keep existing styles...
   focusCard: {
     padding: 16,
     backgroundColor: colors.white,
@@ -238,5 +265,12 @@ const styles = StyleSheet.create({
   emptyState: {
     paddingVertical: 32,
     alignItems: "center",
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: colors.muted,
+    marginBottom: 10,
+    // Optional: make it visually consistent with your AppInput default
+    // Extra spacing if needed
   },
 });

@@ -5,7 +5,7 @@ import AppText from "./AppText";
 import { colors } from "@/utils/theme";
 import * as ICONS from "lucide-react-native";
 import { formatDistanceToNow } from "date-fns";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 interface TaskCardProps extends Task {
   onToggleComplete?: (id: string) => void;
@@ -28,6 +28,29 @@ export default function TaskCard({
   const checkScale = useRef(new Animated.Value(isCompleted ? 1 : 0.01)).current;
   const checkOpacity = useRef(new Animated.Value(isCompleted ? 1 : 0)).current;
   const bgColorAnim = useRef(new Animated.Value(isCompleted ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(bgColorAnim, {
+        toValue: isCompleted ? 1 : 0,
+        duration: 250,
+        useNativeDriver: false,
+      }),
+
+      Animated.spring(checkScale, {
+        toValue: isCompleted ? 1 : 0.01,
+        speed: 18,
+        bounciness: 8,
+        useNativeDriver: true,
+      }),
+
+      Animated.timing(checkOpacity, {
+        toValue: isCompleted ? 1 : 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [status]);
 
   const handlePress = () => {
     Animated.sequence([

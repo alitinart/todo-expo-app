@@ -12,6 +12,8 @@ export const colors = {
   muted: "#C6C4D3",
   lightGray: "#EEEEF1",
   gray: "#464752",
+  black: "#000000",
+  error: "#BF5938",
 };
 
 export const taskColors = [
