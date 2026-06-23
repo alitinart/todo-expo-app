@@ -2,9 +2,8 @@ import AppText from "@/components/AppText";
 import { colors } from "@/utils/theme";
 import * as ICONS from "lucide-react-native";
 import { X } from "lucide-react-native";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Animated,
   FlatList,
   ListRenderItem,
   Modal,
@@ -13,6 +12,17 @@ import {
   View,
 } from "react-native";
 import AppInput from "./AppInput";
+
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  runOnJS,
+} from "react-native-reanimated";
+
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { scheduleOnRN } from "react-native-worklets";
 
 const NON_ICON_EXPORTS = new Set([
   "createLucideIcon",
@@ -47,67 +57,72 @@ export default function IconPickerModal({
   onSelect,
 }: IconPickerModalProps) {
   const [query, setQuery] = useState("");
-  const [isMounted, setIsMounted] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  const backdropOpacity = useRef(new Animated.Value(0)).current;
-  const sheetTranslateY = useRef(new Animated.Value(500)).current;
+  const translateY = useSharedValue(500);
+  const opacity = useSharedValue(0);
+
+  const closeModal = () => {
+    opacity.value = withTiming(0, { duration: 180 });
+    translateY.value = withTiming(500, { duration: 220 }, () => {
+      runOnJS(setMounted)(false);
+      runOnJS(onClose)();
+    });
+  };
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      if (event.translationY > 0) {
+        translateY.value = event.translationY;
+      }
+    })
+    .onEnd((event) => {
+      const shouldClose = event.translationY > 120 || event.velocityY > 800;
+
+      if (shouldClose) {
+        scheduleOnRN(closeModal);
+      } else {
+        translateY.value = withSpring(0, {
+          damping: 20,
+          stiffness: 200,
+        });
+      }
+    });
 
   useEffect(() => {
     if (visible) {
-      setIsMounted(true);
+      setMounted(true);
 
       requestAnimationFrame(() => {
-        backdropOpacity.setValue(0);
-        sheetTranslateY.setValue(500);
-
-        Animated.parallel([
-          Animated.timing(backdropOpacity, {
-            toValue: 1,
-            duration: 220,
-            useNativeDriver: true,
-          }),
-          Animated.spring(sheetTranslateY, {
-            toValue: 0,
-            useNativeDriver: true,
-            damping: 22,
-            stiffness: 220,
-            mass: 0.9,
-          }),
-        ]).start();
+        opacity.value = withTiming(1, { duration: 220 });
+        translateY.value = withSpring(0, {
+          damping: 22,
+          stiffness: 220,
+          mass: 0.9,
+        });
       });
-    } else if (isMounted) {
-      Animated.parallel([
-        Animated.timing(backdropOpacity, {
-          toValue: 0,
-          duration: 180,
-          useNativeDriver: true,
-        }),
-        Animated.timing(sheetTranslateY, {
-          toValue: 500,
-          duration: 220,
-          useNativeDriver: true,
-        }),
-      ]).start(({ finished }) => {
-        if (finished) {
-          setIsMounted(false);
-        }
-      });
+    } else if (mounted) {
+      closeModal();
     }
-  }, [visible, backdropOpacity, isMounted, sheetTranslateY]);
+  }, [visible]);
+
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
 
   const filteredIcons = useMemo(() => {
     const search = query.trim().toLowerCase();
-
-    if (!search) {
-      return ICON_NAMES;
-    }
-
+    if (!search) return ICON_NAMES;
     return ICON_NAMES.filter((icon) => icon.toLowerCase().includes(search));
   }, [query]);
 
   const handleClose = () => {
     setQuery("");
-    onClose();
+    closeModal();
   };
 
   const renderItem: ListRenderItem<LucideIconName> = ({ item: name }) => {
@@ -126,79 +141,64 @@ export default function IconPickerModal({
     );
   };
 
-  if (!isMounted) {
-    return null;
-  }
+  if (!mounted) return null;
 
   return (
     <Modal
-      visible={isMounted}
+      visible={mounted}
       transparent
       animationType="none"
       statusBarTranslucent
       onRequestClose={handleClose}
     >
-      <Animated.View
-        pointerEvents="box-none"
-        style={[
-          styles.backdrop,
-          {
-            opacity: backdropOpacity,
-          },
-        ]}
-      >
+      <Animated.View style={[styles.backdrop, backdropStyle]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
       </Animated.View>
 
-      <Animated.View
-        style={[
-          styles.sheet,
-          {
-            transform: [{ translateY: sheetTranslateY }],
-          },
-        ]}
-      >
-        <View style={styles.handle} />
+      <GestureDetector gesture={panGesture}>
+        <Animated.View style={[styles.sheet, sheetStyle]}>
+          <View style={styles.handle} />
 
-        <View style={styles.sheetHeader}>
-          <AppText variant="title" weight="medium" color={colors.primary}>
-            Choose an icon
-          </AppText>
+          <View style={styles.sheetHeader}>
+            <AppText variant="title" weight="medium" color={colors.primary}>
+              Choose an icon
+            </AppText>
 
-          <Pressable onPress={handleClose} hitSlop={8}>
-            <X color={colors.gray} size={22} />
-          </Pressable>
-        </View>
+            <Pressable onPress={handleClose} hitSlop={8}>
+              <X color={colors.gray} size={22} />
+            </Pressable>
+          </View>
 
-        <AppInput
-          style={styles.searchInput}
-          placeholder="Search icons..."
-          placeholderTextColor="#C2CEDF"
-          value={query}
-          onChangeText={setQuery}
-          autoCorrect={false}
-          autoCapitalize="none"
-        />
+          <AppInput
+            style={styles.searchInput}
+            placeholder="Search icons..."
+            placeholderTextColor="#C2CEDF"
+            value={query}
+            onChangeText={setQuery}
+            autoCorrect={false}
+            autoCapitalize="none"
+          />
 
-        <FlatList
-          data={filteredIcons}
-          keyExtractor={(item) => item}
-          renderItem={renderItem}
-          numColumns={NUM_COLUMNS}
-          initialNumToRender={40}
-          maxToRenderPerBatch={40}
-          windowSize={5}
-          removeClippedSubviews
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.gridContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <AppText color={colors.gray}>No icons found</AppText>
-            </View>
-          }
-        />
-      </Animated.View>
+          <FlatList
+            data={filteredIcons}
+            keyExtractor={(item) => item}
+            renderItem={renderItem}
+            numColumns={NUM_COLUMNS}
+            initialNumToRender={40}
+            maxToRenderPerBatch={40}
+            windowSize={5}
+            removeClippedSubviews
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.gridContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <AppText color={colors.gray}>No icons found</AppText>
+              </View>
+            }
+          />
+        </Animated.View>
+      </GestureDetector>
     </Modal>
   );
 }

@@ -30,14 +30,12 @@ export default function AddTaskScreen() {
   return (
     <KeyboardDismissView>
       <SafeAreaView style={styles.wrapper}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()}>
-            <ArrowLeft color={colors.primary} size={24} />
-          </Pressable>
+        <Pressable style={styles.header} onPress={() => router.back()}>
+          <ArrowLeft color={colors.primary} size={24} />
           <AppText color={colors.primary} variant="title" weight="medium">
             New Task
           </AppText>
-        </View>
+        </Pressable>
         <View style={styles.form}>
           <View style={{ gap: 16 }}>
             <AppText center variant="h1" color={colors.primary} weight="bold">

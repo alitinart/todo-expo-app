@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { StyleSheet, TextInput, TextInputProps, View } from "react-native";
 import AppText from "./AppText";
+import { colors } from "@/utils/theme";
 
 interface AppInputProps extends TextInputProps {
   label?: string;
@@ -27,7 +28,7 @@ export default function AppInput({
           textarea && styles.textarea,
           style,
         ]}
-        placeholderTextColor="#C2CEDF"
+        placeholderTextColor={colors.muted}
         multiline={textarea}
         numberOfLines={textarea ? numberOfLines : undefined}
         textAlignVertical={textarea ? "top" : "center"}
@@ -57,7 +58,7 @@ const styles = StyleSheet.create({
     color: "#1A2332",
   },
   input: {
-    backgroundColor: "#EAF1FB",
+    backgroundColor: colors.primaryForeground,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 16,

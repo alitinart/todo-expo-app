@@ -5,10 +5,15 @@ import KeyboardDismissView from "@/components/KeyboardDismissView";
 import TaskCard from "@/components/TaskCard";
 import TaskDetailModal from "@/components/TaskDetailModal";
 import { Task } from "@/models/task.model";
-import { colors } from "@/utils/theme";
+import { colors, taskColors } from "@/utils/theme";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, StatusBar, StyleSheet, View } from "react-native";
+import { Pressable, StatusBar, StyleSheet, View } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type Filter = "ALL" | "COMPLETED" | "TODO";
@@ -48,16 +53,19 @@ const EMPTY_MESSAGES: Record<Filter, string> = {
 
 export default function Index() {
   const router = useRouter();
+
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
   const [filter, setFilter] = useState<Filter>("ALL");
   const [query, setQuery] = useState("");
-  const progressAnim = useRef(new Animated.Value(0)).current;
+
   const completed = tasks.filter((t) => t.status === "COMPLETED").length;
   const total = tasks.length;
   const progress = total === 0 ? 0 : completed / total;
   const tasksToComplete = tasks.filter((t) => t.status === "TODO");
+
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const selectedTask = tasks.find((t) => t.id === selectedTaskId) ?? null;
+
   const handleOpenModal = (task: Task) => setSelectedTaskId(task.id);
   const handleCloseModal = () => setSelectedTaskId(null);
   const handleOnDelete = (id: string) => {
@@ -77,6 +85,7 @@ export default function Index() {
     );
     if (selectedTaskId === id) handleCloseModal();
   };
+
   const statusFiltered =
     filter === "ALL" ? tasks : tasks.filter((t) => t.status === filter);
   const filteredTasks = useMemo(() => {
@@ -88,14 +97,22 @@ export default function Index() {
       return title.includes(q) || desc.includes(q);
     });
   }, [statusFiltered, query]);
+
+  const progressAnim = useSharedValue(0);
+
   useEffect(() => {
-    Animated.spring(progressAnim, {
-      toValue: progress,
-      useNativeDriver: false,
-      bounciness: 6,
-      speed: 12,
-    }).start();
-  }, [progress, progressAnim]);
+    progressAnim.value = withSpring(progress, {
+      damping: 100,
+      stiffness: 150,
+    });
+  }, [progress]);
+
+  const progressStyle = useAnimatedStyle(() => {
+    return {
+      width: `${progressAnim.value * 100}%`,
+    };
+  });
+
   return (
     <>
       <StatusBar barStyle="dark-content" />
@@ -126,11 +143,8 @@ export default function Index() {
               <Animated.View
                 style={[
                   styles.progressFill,
+                  progressStyle,
                   {
-                    width: progressAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["0%", "100%"],
-                    }),
                     backgroundColor:
                       progress === 1 ? colors.green : colors.primary,
                   },
@@ -196,7 +210,17 @@ export default function Index() {
         onClose={handleCloseModal}
         onDelete={handleOnDelete}
         onMarkDone={handleToggleComplete}
-        task={selectedTask}
+        task={
+          selectedTask || {
+            status: "COMPLETED",
+            createdAt: new Date(),
+            id: "",
+            color: taskColors[0],
+            icon: "Plus",
+            description: "",
+            title: "",
+          }
+        }
       />
     </>
   );

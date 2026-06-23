@@ -1,11 +1,19 @@
 import { Task } from "@/models/task.model";
-import { StyleSheet, View, Pressable, Animated } from "react-native";
+import { StyleSheet, View, Pressable } from "react-native";
 import { Check } from "lucide-react-native";
 import AppText from "./AppText";
 import { colors } from "@/utils/theme";
 import * as ICONS from "lucide-react-native";
 import { formatDistanceToNow } from "date-fns";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  interpolateColor,
+} from "react-native-reanimated";
 
 interface TaskCardProps extends Task {
   onToggleComplete?: (id: string) => void;
@@ -24,111 +32,68 @@ export default function TaskCard({
   const accent = colors[color] || colors.primary;
   const isCompleted = status === "COMPLETED";
 
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const checkScale = useRef(new Animated.Value(isCompleted ? 1 : 0.01)).current;
-  const checkOpacity = useRef(new Animated.Value(isCompleted ? 1 : 0)).current;
-  const bgColorAnim = useRef(new Animated.Value(isCompleted ? 1 : 0)).current;
+  const scale = useSharedValue(1);
+  const checkScale = useSharedValue(isCompleted ? 1 : 0.5);
+  const checkOpacity = useSharedValue(isCompleted ? 1 : 0);
+  const progress = useSharedValue(isCompleted ? 1 : 0);
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(bgColorAnim, {
-        toValue: isCompleted ? 1 : 0,
-        duration: 250,
-        useNativeDriver: false,
-      }),
+    const value = isCompleted ? 1 : 0;
 
-      Animated.spring(checkScale, {
-        toValue: isCompleted ? 1 : 0.01,
-        speed: 18,
-        bounciness: 8,
-        useNativeDriver: true,
-      }),
-
-      Animated.timing(checkOpacity, {
-        toValue: isCompleted ? 1 : 0,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    progress.value = withTiming(value, { duration: 250 });
+    checkScale.value = withSpring(value, {
+      damping: 100,
+      stiffness: 500,
+    });
+    checkOpacity.value = withTiming(value, { duration: 150 });
   }, [status]);
 
   const handlePress = () => {
-    Animated.sequence([
-      Animated.spring(scaleAnim, {
-        toValue: 0.96,
-        useNativeDriver: true,
-        speed: 50,
-        bounciness: 0,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        speed: 20,
-        bounciness: 12,
-      }),
-    ]).start();
+    scale.value = withSpring(0.96, {}, () => {
+      scale.value = withSpring(1);
+    });
 
-    if (!isCompleted) {
-      Animated.parallel([
-        Animated.spring(checkScale, {
-          toValue: 1,
-          useNativeDriver: true,
-          speed: 20,
-          bounciness: 15,
-        }),
-        Animated.timing(checkOpacity, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(bgColorAnim, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: false,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.spring(checkScale, {
-          toValue: 0,
-          useNativeDriver: true,
-          speed: 30,
-          bounciness: 0,
-        }),
-        Animated.timing(checkOpacity, {
-          toValue: 0,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(bgColorAnim, {
-          toValue: 0,
-          duration: 250,
-          useNativeDriver: false,
-        }),
-      ]).start();
-    }
+    const next = isCompleted ? 0 : 1;
+
+    progress.value = withTiming(next, { duration: 250 });
+    checkScale.value = withSpring(next, {
+      damping: 100,
+      stiffness: 500,
+    });
+    checkOpacity.value = withTiming(next, { duration: 150 });
 
     onToggleComplete?.(id);
   };
 
-  const interpolatedBg = bgColorAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["transparent", colors.green],
-  });
+  const wrapperStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
-  const interpolatedBorder = bgColorAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [colors.muted, colors.green],
-  });
+  const indicatorStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      progress.value,
+      [0, 1],
+      ["transparent", colors.green],
+    ),
+    borderColor: interpolateColor(
+      progress.value,
+      [0, 1],
+      [colors.muted, colors.green],
+    ),
+  }));
+
+  const checkStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: checkScale.value }],
+    opacity: checkOpacity.value,
+  }));
 
   return (
-    <Animated.View
-      style={[styles.wrapper, { transform: [{ scale: scaleAnim }] }]}
-    >
+    <Animated.View style={[styles.wrapper, wrapperStyle]}>
       <View style={styles.infoWrapper}>
         <View style={[styles.iconWrapper, { backgroundColor: accent }]}>
           <Icon color={colors.white} size={30} />
         </View>
+
         <View style={{ gap: 2 }}>
           <AppText weight="medium">{title}</AppText>
           <AppText variant="caption" color={colors.gray}>
@@ -138,23 +103,8 @@ export default function TaskCard({
       </View>
 
       <Pressable onPress={handlePress} hitSlop={8}>
-        <Animated.View
-          style={[
-            styles.statusIndicatorWrapper,
-            {
-              backgroundColor: interpolatedBg,
-              borderColor: interpolatedBorder,
-            },
-          ]}
-        >
-          <Animated.View
-            renderToHardwareTextureAndroid
-            shouldRasterizeIOS
-            style={{
-              transform: [{ scale: checkScale }],
-              opacity: checkOpacity,
-            }}
-          >
+        <Animated.View style={[styles.statusIndicatorWrapper, indicatorStyle]}>
+          <Animated.View style={checkStyle}>
             <Check size={16} strokeWidth={3} color={colors.white} />
           </Animated.View>
         </Animated.View>
