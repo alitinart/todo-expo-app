@@ -4,8 +4,8 @@ import { CheckCircle, CalendarDays, Trash2 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AppButton from "./AppButton";
-import AppText from "./AppText";
+import AppButton from "../ui/AppButton";
+import AppText from "../ui/AppText";
 
 import Animated, {
   runOnJS,

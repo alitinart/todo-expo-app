@@ -1,21 +1,25 @@
 import AddTaskButton from "@/components/AddTaskButton";
-import AppInput from "@/components/AppInput";
-import AppText from "@/components/AppText";
-import KeyboardDismissView from "@/components/KeyboardDismissView";
+import AppInput from "@/components/ui/AppInput";
+import AppText from "@/components/ui/AppText";
+import KeyboardDismissView from "@/components/ui/KeyboardDismissView";
 import TaskCard from "@/components/TaskCard";
-import TaskDetailModal from "@/components/TaskDetailModal";
+import TaskDetailModal from "@/components/modals/TaskDetailModal";
 import { Task } from "@/models/task.model";
 import TaskService from "@/utils/services/task.service";
 import { colors, taskColors } from "@/utils/theme";
-import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { Pressable, StatusBar, StyleSheet, View } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from "react-native-reanimated";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  View,
+  ScrollView,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import WeatherCard from "@/components/WeatherCard";
+import FocusCard from "@/components/FocusCard";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 type Filter = "ALL" | "COMPLETED" | "TODO";
 
@@ -35,13 +39,10 @@ export default function Index() {
   const router = useRouter();
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+
   const [filter, setFilter] = useState<Filter>("ALL");
   const [query, setQuery] = useState("");
-
-  const completed = tasks.filter((t) => t.status === "COMPLETED").length;
-  const total = tasks.length;
-  const progress = total === 0 ? 0 : completed / total;
-  const tasksToComplete = tasks.filter((t) => t.status === "TODO");
 
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const selectedTask = tasks.find((t) => t.id === selectedTaskId) ?? null;
@@ -75,118 +76,111 @@ export default function Index() {
     });
   }, [statusFiltered, query]);
 
-  const progressAnim = useSharedValue(0);
+  useFocusEffect(
+    useCallback(() => {
+      const fetchTasks = async () => {
+        setLoading(true);
+        const savedTasks = await TaskService.getTasks();
 
-  useEffect(() => {
-    progressAnim.value = withSpring(progress, {
-      damping: 100,
-      stiffness: 150,
-    });
-  }, [progress, progressAnim]);
+        if (savedTasks) {
+          setTasks(savedTasks);
+        }
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      const savedTasks = await TaskService.getTasks();
-      if (savedTasks) setTasks(savedTasks);
-    };
-    fetchTasks();
-  }, []);
+        setLoading(false);
+      };
 
-  const progressStyle = useAnimatedStyle(() => {
-    return {
-      width: `${progressAnim.value * 100}%`,
-    };
-  });
+      fetchTasks();
+    }, []),
+  );
 
   return (
     <>
       <StatusBar barStyle="dark-content" />
       <KeyboardDismissView>
-        <SafeAreaView style={styles.wrapper}>
-          <AppText color={colors.primary} variant="title" weight="bold">
-            Welcome back!
-          </AppText>
-          <View style={styles.focusCard}>
-            <View style={styles.decorativeCircle} />
-            <AppText weight="medium" color={colors.primary}>
-              Today&apos;s Focus
+        <SafeAreaView style={{ flex: 1 }}>
+          <KeyboardAwareScrollView
+            extraScrollHeight={40}
+            enableOnAndroid
+            contentContainerStyle={styles.wrapper}
+          >
+            <AppText color={colors.primary} variant="title" weight="bold">
+              Welcome back!
             </AppText>
-            <AppText weight="bold" variant="h2">
-              {tasksToComplete.length > 0
-                ? `You've got ${tasksToComplete.length} tasks to complete today.`
-                : `You have no tasks to complete today.`}
-            </AppText>
-            <View style={styles.progressMeta}>
-              <AppText variant="caption" color={colors.gray}>
-                {completed} of {total} completed
-              </AppText>
-              <AppText variant="caption" color={colors.gray} weight="medium">
-                {Math.round(progress * 100)}%
-              </AppText>
-            </View>
-            <View style={styles.progressTrack}>
-              <Animated.View
-                style={[
-                  styles.progressFill,
-                  progressStyle,
-                  {
-                    backgroundColor:
-                      progress === 1 ? colors.green : colors.primary,
-                  },
-                ]}
-              />
-            </View>
-          </View>
-          <View style={styles.taskWrapper}>
-            <View style={styles.taskHeader}>
-              <AppText variant="title" weight="bold">
-                Tasks
-              </AppText>
-              <View style={styles.filterRow}>
-                {FILTERS.map(({ label, value }) => (
-                  <Pressable
-                    key={value}
-                    onPress={() => setFilter(value)}
-                    style={[
-                      styles.filterPill,
-                      filter === value && styles.filterPillActive,
-                    ]}
-                  >
-                    <AppText
-                      variant="caption"
-                      color={filter === value ? colors.primary : colors.gray}
-                      weight={filter === value ? "medium" : "regular"}
-                    >
-                      {label}
-                    </AppText>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-            <AppInput
-              placeholder="Search tasks..."
-              value={query}
-              onChangeText={setQuery}
-              autoCapitalize="none"
-              autoCorrect={false}
-              style={styles.searchInput}
-            />
-            {filteredTasks.length === 0 ? (
-              <View style={styles.emptyState}>
-                <AppText variant="body" weight="bold" color={colors.muted}>
-                  {query
-                    ? "No tasks match your search."
-                    : EMPTY_MESSAGES[filter]}
+
+            <FocusCard tasks={tasks} />
+            <WeatherCard />
+
+            <View style={styles.taskWrapper}>
+              <View style={styles.taskHeader}>
+                <AppText variant="title" weight="bold">
+                  Tasks
                 </AppText>
+                <View style={styles.filterRow}>
+                  {FILTERS.map(({ label, value }) => (
+                    <Pressable
+                      key={value}
+                      onPress={() => setFilter(value)}
+                      style={[
+                        styles.filterPill,
+                        filter === value && styles.filterPillActive,
+                      ]}
+                    >
+                      <AppText
+                        variant="caption"
+                        color={filter === value ? colors.primary : colors.gray}
+                        weight={filter === value ? "medium" : "regular"}
+                      >
+                        {label}
+                      </AppText>
+                    </Pressable>
+                  ))}
+                </View>
               </View>
-            ) : (
-              filteredTasks.map((task) => (
-                <Pressable key={task.id} onPress={() => handleOpenModal(task)}>
-                  <TaskCard {...task} onToggleComplete={handleToggleComplete} />
-                </Pressable>
-              ))
-            )}
-          </View>
+              {!loading ? (
+                <>
+                  <AppInput
+                    placeholder="Search tasks..."
+                    value={query}
+                    onChangeText={setQuery}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    style={styles.searchInput}
+                  />
+                  {filteredTasks.length === 0 ? (
+                    <View style={styles.emptyState}>
+                      <AppText
+                        variant="body"
+                        weight="bold"
+                        color={colors.muted}
+                      >
+                        {query
+                          ? "No tasks match your search."
+                          : EMPTY_MESSAGES[filter]}
+                      </AppText>
+                    </View>
+                  ) : (
+                    filteredTasks.map((task) => (
+                      <Pressable
+                        key={task.id}
+                        onPress={() => handleOpenModal(task)}
+                      >
+                        <TaskCard
+                          {...task}
+                          onToggleComplete={handleToggleComplete}
+                        />
+                      </Pressable>
+                    ))
+                  )}
+                </>
+              ) : (
+                <View style={styles.loading}>
+                  <AppText variant="body" weight="bold" color={colors.primary}>
+                    Loading...
+                  </AppText>
+                </View>
+              )}
+            </View>
+          </KeyboardAwareScrollView>
           <AddTaskButton onPress={() => router.push("/add-task")} />
         </SafeAreaView>
       </KeyboardDismissView>
@@ -210,11 +204,18 @@ export default function Index() {
     </>
   );
 }
+
 const styles = StyleSheet.create({
   wrapper: {
     padding: 16,
     gap: 32,
-    flex: 1,
+    flexGrow: 1,
+    paddingBottom: 120,
+  },
+  loading: {
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 20,
   },
   taskWrapper: {
     gap: 16,
@@ -227,38 +228,6 @@ const styles = StyleSheet.create({
   filterRow: {
     flexDirection: "row",
     gap: 8,
-  },
-  focusCard: {
-    padding: 16,
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    overflow: "hidden",
-    gap: 8,
-  },
-  progressMeta: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 4,
-  },
-  progressTrack: {
-    height: 6,
-    backgroundColor: colors.muted,
-    borderRadius: 99,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 99,
-  },
-  decorativeCircle: {
-    width: 80,
-    height: 80,
-    backgroundColor: colors.primaryForeground,
-    borderRadius: 99,
-    position: "absolute",
-    top: -6,
-    right: -12,
-    zIndex: -1,
   },
   filterPill: {
     paddingHorizontal: 12,

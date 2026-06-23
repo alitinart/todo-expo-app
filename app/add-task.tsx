@@ -1,8 +1,10 @@
-import AppButton from "@/components/AppButton";
-import AppInput from "@/components/AppInput";
-import AppText from "@/components/AppText";
-import IconPickerModal, { LucideIconName } from "@/components/IconPickerModal";
-import KeyboardDismissView from "@/components/KeyboardDismissView";
+import AppButton from "@/components/ui/AppButton";
+import AppInput from "@/components/ui/AppInput";
+import AppText from "@/components/ui/AppText";
+import IconPickerModal, {
+  LucideIconName,
+} from "@/components/modals/IconPickerModal";
+import KeyboardDismissView from "@/components/ui/KeyboardDismissView";
 import { Task } from "@/models/task.model";
 import TaskService from "@/utils/services/task.service";
 import { colors, taskColors } from "@/utils/theme";
@@ -13,6 +15,7 @@ import { useState } from "react";
 import { StyleSheet, View, Pressable, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Crypto from "expo-crypto";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export default function AddTaskScreen() {
   const router = useRouter();
@@ -30,7 +33,7 @@ export default function AddTaskScreen() {
 
   const SelectedIcon: any = { ...ICONS }[iconName];
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const newErrors = {
       title: "",
       description: "",
@@ -64,126 +67,135 @@ export default function AddTaskScreen() {
       createdAt: new Date(),
     };
 
-    TaskService.addTask(newTask);
+    await TaskService.addTask(newTask);
     router.back();
   };
 
   return (
-    <KeyboardDismissView>
-      <SafeAreaView style={styles.wrapper}>
-        <Pressable style={styles.header} onPress={() => router.back()}>
-          <ArrowLeft color={colors.primary} size={24} />
-          <AppText color={colors.primary} variant="title" weight="medium">
-            New Task
-          </AppText>
-        </Pressable>
-        <View style={styles.form}>
-          <View style={{ gap: 16 }}>
-            <AppText center variant="h1" color={colors.primary} weight="bold">
-              What&apos;s on your mind?
+    <KeyboardAwareScrollView
+      contentContainerStyle={{
+        flexGrow: 1,
+        justifyContent: "center",
+      }}
+      extraScrollHeight={40}
+      enableOnAndroid
+    >
+      <KeyboardDismissView>
+        <SafeAreaView style={styles.wrapper}>
+          <Pressable style={styles.header} onPress={() => router.back()}>
+            <ArrowLeft color={colors.primary} size={24} />
+            <AppText color={colors.primary} variant="title" weight="medium">
+              New Task
             </AppText>
-            <AppText center variant="body" color={colors.gray}>
-              Capture your thoughts and to-dos here.
-            </AppText>
-          </View>
-          <AppInput
-            label="Task Title"
-            placeholder="e.g., Design Weekly Sync"
-            value={title}
-            onChangeText={(text) => {
-              setTitle(text);
+          </Pressable>
+          <View style={styles.form}>
+            <View style={{ gap: 16 }}>
+              <AppText center variant="h1" color={colors.primary} weight="bold">
+                What&apos;s on your mind?
+              </AppText>
+              <AppText center variant="body" color={colors.gray}>
+                Capture your thoughts and to-dos here.
+              </AppText>
+            </View>
+            <AppInput
+              label="Task Title"
+              placeholder="e.g., Design Weekly Sync"
+              value={title}
+              onChangeText={(text) => {
+                setTitle(text);
 
-              if (text.trim()) {
-                setErrors((prev) => ({
-                  ...prev,
-                  title: "",
-                }));
-              }
-            }}
-          />
+                if (text.trim()) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    title: "",
+                  }));
+                }
+              }}
+            />
 
-          {errors.title && (
-            <AppText color="red" style={styles.error}>
-              {errors.title}
-            </AppText>
-          )}
-          <AppInput
-            label="Description"
-            placeholder="Add a some details about this task..."
-            textarea
-            value={description}
-            onChangeText={(text) => {
-              setDescription(text);
+            {errors.title && (
+              <AppText color="red" style={styles.error}>
+                {errors.title}
+              </AppText>
+            )}
+            <AppInput
+              label="Description"
+              placeholder="Add a some details about this task..."
+              textarea
+              value={description}
+              onChangeText={(text) => {
+                setDescription(text);
 
-              if (text.length <= 200) {
-                setErrors((prev) => ({
-                  ...prev,
-                  description: "",
-                }));
-              }
-            }}
-          />
+                if (text.length <= 200) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    description: "",
+                  }));
+                }
+              }}
+            />
 
-          {errors.description && (
-            <AppText color="red" style={styles.error}>
-              {errors.description}
-            </AppText>
-          )}
+            {errors.description && (
+              <AppText color="red" style={styles.error}>
+                {errors.description}
+              </AppText>
+            )}
 
-          <View style={styles.customizeWrapper}>
-            <AppText
-              weight="medium"
-              style={{ fontSize: 14 }}
-              color={colors.gray}
-            >
-              Customize
-            </AppText>
-            <View style={styles.row}>
-              <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={() => setPickerVisible(true)}
-                style={[styles.iconPicker, { backgroundColor: activeColor }]}
+            <View style={styles.customizeWrapper}>
+              <AppText
+                weight="medium"
+                style={{ fontSize: 14 }}
+                color={colors.gray}
               >
-                <View style={styles.iconBox}>
-                  <SelectedIcon color={colors.white} size={22} />
-                </View>
-              </TouchableOpacity>
+                Customize
+              </AppText>
+              <View style={styles.row}>
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() => setPickerVisible(true)}
+                  style={[styles.iconPicker, { backgroundColor: activeColor }]}
+                >
+                  <View style={styles.iconBox}>
+                    <SelectedIcon color={colors.white} size={22} />
+                  </View>
+                </TouchableOpacity>
 
-              <View style={styles.colorsWrapper}>
-                {taskColors.map((color) => (
-                  <Pressable
-                    onPress={() => {
-                      setActiveColor(color);
-                    }}
-                    key={color}
-                    style={[
-                      styles.colorItem,
-                      color === activeColor ? styles.activeColor : null,
-                      { backgroundColor: color },
-                    ]}
-                  ></Pressable>
-                ))}
+                <View style={styles.colorsWrapper}>
+                  {taskColors.map((color) => (
+                    <Pressable
+                      onPress={() => {
+                        setActiveColor(color);
+                      }}
+                      key={color}
+                      style={[
+                        styles.colorItem,
+                        color === activeColor ? styles.activeColor : null,
+                        { backgroundColor: color },
+                      ]}
+                    ></Pressable>
+                  ))}
+                </View>
               </View>
             </View>
+
+            <AppButton
+              title="Add Task"
+              leftIcon={<PlusCircle color={colors.white} size={18} />}
+              onPress={handleSave}
+            />
           </View>
 
-          <AppButton
-            title="Add Task"
-            leftIcon={<PlusCircle color={colors.white} size={18} />}
-            onPress={handleSave}
+          <IconPickerModal
+            visible={pickerVisible}
+            onClose={() => setPickerVisible(false)}
+            onSelect={(name) => {
+              setIconName(name);
+              setPickerVisible(false);
+            }}
           />
-        </View>
-
-        <IconPickerModal
-          visible={pickerVisible}
-          onClose={() => setPickerVisible(false)}
-          onSelect={(name) => {
-            setIconName(name);
-            setPickerVisible(false);
-          }}
-        />
-      </SafeAreaView>
-    </KeyboardDismissView>
+        </SafeAreaView>
+      </KeyboardDismissView>
+    </KeyboardAwareScrollView>
   );
 }
 

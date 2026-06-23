@@ -1,7 +1,7 @@
 import { Task } from "@/models/task.model";
 import { StyleSheet, View, Pressable } from "react-native";
 import { Check } from "lucide-react-native";
-import AppText from "./AppText";
+import AppText from "./ui/AppText";
 import { colors } from "@/utils/theme";
 import * as ICONS from "lucide-react-native";
 import { formatDistanceToNow } from "date-fns";

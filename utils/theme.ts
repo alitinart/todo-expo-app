@@ -2,6 +2,7 @@ export const colors = {
   primary: "#4352A5",
   primaryForeground: "#EAEEF8",
   secondary: "#66BB6A",
+  secondaryForeground: "#66BB6A30",
   tertiary: "#FF8A65",
   neutral: "#455A64",
 

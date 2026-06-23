@@ -1,4 +1,4 @@
-import AppText from "@/components/AppText";
+import AppText from "@/components/ui/AppText";
 import { colors } from "@/utils/theme";
 import * as ICONS from "lucide-react-native";
 import { X } from "lucide-react-native";
@@ -11,7 +11,7 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import AppInput from "./AppInput";
+import AppInput from "../ui/AppInput";
 
 import Animated, {
   useAnimatedStyle,
