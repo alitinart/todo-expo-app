@@ -5,9 +5,10 @@ import KeyboardDismissView from "@/components/KeyboardDismissView";
 import TaskCard from "@/components/TaskCard";
 import TaskDetailModal from "@/components/TaskDetailModal";
 import { Task } from "@/models/task.model";
+import TaskService from "@/utils/services/task.service";
 import { colors, taskColors } from "@/utils/theme";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, StatusBar, StyleSheet, View } from "react-native";
 import Animated, {
   useSharedValue,
@@ -17,27 +18,6 @@ import Animated, {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type Filter = "ALL" | "COMPLETED" | "TODO";
-
-const INITIAL_TASKS: Task[] = [
-  {
-    id: "1",
-    icon: "ChefHat",
-    title: "Finish Dishes",
-    color: "primary",
-    description: "Finish the dishes before the meal is served.",
-    status: "TODO",
-    createdAt: new Date(),
-  },
-  {
-    id: "2",
-    icon: "Footprints",
-    color: "tertiary",
-    title: "Go for a walk",
-    description: "Take a walk to clear your mind and relax your body.",
-    status: "COMPLETED",
-    createdAt: new Date(),
-  },
-];
 
 const FILTERS: { label: string; value: Filter }[] = [
   { label: "All", value: "ALL" },
@@ -54,7 +34,7 @@ const EMPTY_MESSAGES: Record<Filter, string> = {
 export default function Index() {
   const router = useRouter();
 
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<Filter>("ALL");
   const [query, setQuery] = useState("");
 
@@ -68,21 +48,18 @@ export default function Index() {
 
   const handleOpenModal = (task: Task) => setSelectedTaskId(task.id);
   const handleCloseModal = () => setSelectedTaskId(null);
+
   const handleOnDelete = (id: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
+    TaskService.deleteTask(id).then(() => {
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+    });
     handleCloseModal();
   };
+
   const handleToggleComplete = (id: string) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === id
-          ? {
-              ...task,
-              status: task.status === "COMPLETED" ? "TODO" : "COMPLETED",
-            }
-          : task,
-      ),
-    );
+    TaskService.toggleComplete(id).then((updatedTasks) => {
+      if (updatedTasks) setTasks(updatedTasks);
+    });
     if (selectedTaskId === id) handleCloseModal();
   };
 
@@ -105,7 +82,15 @@ export default function Index() {
       damping: 100,
       stiffness: 150,
     });
-  }, [progress]);
+  }, [progress, progressAnim]);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      const savedTasks = await TaskService.getTasks();
+      if (savedTasks) setTasks(savedTasks);
+    };
+    fetchTasks();
+  }, []);
 
   const progressStyle = useAnimatedStyle(() => {
     return {

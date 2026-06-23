@@ -3,6 +3,8 @@ import AppInput from "@/components/AppInput";
 import AppText from "@/components/AppText";
 import IconPickerModal, { LucideIconName } from "@/components/IconPickerModal";
 import KeyboardDismissView from "@/components/KeyboardDismissView";
+import { Task } from "@/models/task.model";
+import TaskService from "@/utils/services/task.service";
 import { colors, taskColors } from "@/utils/theme";
 import { useRouter } from "expo-router";
 import { ArrowLeft, PlusCircle } from "lucide-react-native";
@@ -10,6 +12,7 @@ import * as ICONS from "lucide-react-native";
 import { useState } from "react";
 import { StyleSheet, View, Pressable, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as Crypto from "expo-crypto";
 
 export default function AddTaskScreen() {
   const router = useRouter();
@@ -18,12 +21,50 @@ export default function AddTaskScreen() {
   const [description, setDescription] = useState("");
   const [iconName, setIconName] = useState<LucideIconName>("Plus");
   const [activeColor, setActiveColor] = useState(taskColors[0]);
+  const [errors, setErrors] = useState({
+    title: "",
+    description: "",
+  });
 
   const [pickerVisible, setPickerVisible] = useState(false);
 
   const SelectedIcon: any = { ...ICONS }[iconName];
 
   const handleSave = () => {
+    const newErrors = {
+      title: "",
+      description: "",
+    };
+
+    if (!title.trim()) {
+      newErrors.title = "Task title is required";
+    }
+
+    if (title.trim().length < 3) {
+      newErrors.title = "Title must be at least 3 characters";
+    }
+
+    if (description.trim().length > 200) {
+      newErrors.description = "Description cannot exceed 200 characters";
+    }
+
+    setErrors(newErrors);
+
+    if (newErrors.title || newErrors.description) {
+      return;
+    }
+
+    const newTask: Task = {
+      id: Crypto.randomUUID(),
+      icon: iconName,
+      color: activeColor,
+      title: title.trim(),
+      description: description.trim(),
+      status: "TODO",
+      createdAt: new Date(),
+    };
+
+    TaskService.addTask(newTask);
     router.back();
   };
 
@@ -49,15 +90,45 @@ export default function AddTaskScreen() {
             label="Task Title"
             placeholder="e.g., Design Weekly Sync"
             value={title}
-            onChangeText={setTitle}
+            onChangeText={(text) => {
+              setTitle(text);
+
+              if (text.trim()) {
+                setErrors((prev) => ({
+                  ...prev,
+                  title: "",
+                }));
+              }
+            }}
           />
+
+          {errors.title && (
+            <AppText color="red" style={styles.error}>
+              {errors.title}
+            </AppText>
+          )}
           <AppInput
             label="Description"
             placeholder="Add a some details about this task..."
             textarea
             value={description}
-            onChangeText={setDescription}
+            onChangeText={(text) => {
+              setDescription(text);
+
+              if (text.length <= 200) {
+                setErrors((prev) => ({
+                  ...prev,
+                  description: "",
+                }));
+              }
+            }}
           />
+
+          {errors.description && (
+            <AppText color="red" style={styles.error}>
+              {errors.description}
+            </AppText>
+          )}
 
           <View style={styles.customizeWrapper}>
             <AppText
@@ -120,6 +191,11 @@ const styles = StyleSheet.create({
   wrapper: {
     padding: 16,
     gap: 32,
+  },
+  error: {
+    width: "100%",
+    marginTop: -24,
+    fontSize: 12,
   },
   row: {
     flexDirection: "row",

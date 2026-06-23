@@ -49,8 +49,8 @@ export default function TaskCard({
   }, [status]);
 
   const handlePress = () => {
-    scale.value = withSpring(0.96, {}, () => {
-      scale.value = withSpring(1);
+    scale.value = withTiming(0.98, { duration: 80 }, () => {
+      scale.value = withTiming(1, { duration: 120 });
     });
 
     const next = isCompleted ? 0 : 1;

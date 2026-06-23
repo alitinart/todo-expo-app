@@ -37,13 +37,12 @@ export default function TaskDetailModal({
   const [mounted, setMounted] = useState(false);
 
   const isDone = task.status === "COMPLETED";
-  const formattedDate = task.createdAt.toLocaleDateString("en-US", {
+  const formattedDate = new Date(task.createdAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
-
-  const accentColor = (colors[task.color] as string) ?? colors.primary;
+  const accentColor = task.color;
 
   const translateY = useSharedValue(500);
   const opacity = useSharedValue(0);
@@ -135,8 +134,8 @@ export default function TaskDetailModal({
         <Pressable style={StyleSheet.absoluteFill} onPress={closeModal} />
       </Animated.View>
 
-      <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.modalContainer, sheetStyle]}>
+      <Animated.View style={[styles.modalContainer, sheetStyle]}>
+        <GestureDetector gesture={panGesture}>
           <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
             <View style={styles.handle} />
 
@@ -199,8 +198,8 @@ export default function TaskDetailModal({
               </View>
             </View>
           </View>
-        </Animated.View>
-      </GestureDetector>
+        </GestureDetector>
+      </Animated.View>
     </Modal>
   );
 }
