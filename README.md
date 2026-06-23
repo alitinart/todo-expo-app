@@ -17,13 +17,13 @@ A simple and modern Todo application built with **React Native (Expo)**. This ap
 ## 📸 Preview
 
 ### Home Screen
-![Home Screen](./assets/readme/home.png)
+![Home Screen](./assets/readme/home.PNG)
 
 ### Task Details
-![Task Details](./assets/readme/task-details.png)
+![Task Details](./assets/readme/task-details.PNG)
 
 ### Add Task
-![Add Task](./assets/readme/add-task.png)
+![Add Task](./assets/readme/add-task.PNG)
 
 ### App Demo
 ![App Demo](./assets/readme/app.gif)
