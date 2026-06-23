@@ -83,7 +83,7 @@ export default function Index() {
     <>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.wrapper}>
-        <AppText variant="h2" weight="bold">
+        <AppText color={colors.primary} variant="title" weight="bold">
           Welcome back!
         </AppText>
 

@@ -107,7 +107,7 @@ export default function TaskCard({
           <Icon color={colors.white} size={30} />
         </View>
         <View style={{ gap: 2 }}>
-          <AppText>{title}</AppText>
+          <AppText weight="medium">{title}</AppText>
           <AppText variant="caption" color={colors.gray}>
             Created {formatDistanceToNow(createdAt, { addSuffix: true })}
           </AppText>

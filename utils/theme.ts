@@ -1,5 +1,5 @@
 export const colors = {
-  primary: "#5C6BC0",
+  primary: "#4352A5",
   primaryForeground: "#EAEEF8",
   secondary: "#66BB6A",
   tertiary: "#FF8A65",
@@ -13,3 +13,24 @@ export const colors = {
   lightGray: "#EEEEF1",
   gray: "#464752",
 };
+
+export const taskColors = [
+  "#5C6BC0",
+  "#7986CB",
+
+  "#66BB6A",
+  "#81C784",
+
+  "#FF8A65",
+  "#FFAB91",
+  "#FFE0B2",
+
+  "#455A64",
+  "#607D8B",
+  "#B0BEC5",
+
+  "#BA68C8", // purple
+  "#F06292", // pink
+  "#FFD54F", // yellow
+  "#4DD0E1", // cyan
+];

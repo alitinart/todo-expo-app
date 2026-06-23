@@ -1,12 +1,16 @@
 import { colors } from "@/utils/theme";
 import { Plus } from "lucide-react-native";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, TouchableOpacity } from "react-native";
 
 export default function AddTaskButton({ onPress }: { onPress?: () => void }) {
   return (
-    <Pressable onPress={onPress} style={styles.wrapper}>
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={onPress}
+      style={styles.wrapper}
+    >
       <Plus color={colors.white} size={32} strokeWidth={3} />
-    </Pressable>
+    </TouchableOpacity>
   );
 }
 
