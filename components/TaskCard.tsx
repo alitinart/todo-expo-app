@@ -29,7 +29,7 @@ export default function TaskCard({
   onToggleComplete,
 }: TaskCardProps) {
   const Icon: any = { ...ICONS }[icon] || ICONS.LayoutList;
-  const accent = colors[color] || colors.primary;
+  const accent = color;
   const isCompleted = status === "COMPLETED";
 
   const scale = useSharedValue(1);
