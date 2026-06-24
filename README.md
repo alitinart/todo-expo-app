@@ -10,6 +10,8 @@ A simple and modern Todo application built with **React Native (Expo)**. This ap
 - Mark tasks as completed
 - Persistent local storage
 - Clean and responsive UI
+- Search and filter through tasks
+- Simple navigation
 - Works on Android, iOS, and Web (via Expo)
 
 ---
